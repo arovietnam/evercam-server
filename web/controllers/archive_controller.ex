@@ -201,12 +201,14 @@ defmodule EvercamMedia.ArchiveController do
   end
 
   defp start_archive_creation(archive_id) do
-    case Process.whereis(:archive_creator) do
-      nil ->
-        {:ok, pid} = GenServer.start_link(EvercamMedia.ArchiveCreator.ArchiveCreator, {}, name: :archive_creator)
-        GenServer.cast(pid, {:create_archive, archive_id})
-      pid ->
-        GenServer.cast(pid, {:create_archive, archive_id})
+    if Application.get_env(:evercam_media, :start_camera_workers) do
+      case Process.whereis(:archive_creator) do
+        nil ->
+          {:ok, pid} = GenServer.start_link(EvercamMedia.ArchiveCreator.ArchiveCreator, {}, name: :archive_creator)
+          GenServer.cast(pid, {:create_archive, archive_id})
+        pid ->
+          GenServer.cast(pid, {:create_archive, archive_id})
+      end
     end
   end
 

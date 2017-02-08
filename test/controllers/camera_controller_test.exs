@@ -6,6 +6,8 @@ defmodule EvercamMedia.CameraControllerTest do
     System.put_env("SNAP_KEY", "aaaaaaaaaaaaaaaa")
     System.put_env("SNAP_IV", "bbbbbbbbbbbbbbbb")
 
+    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+
     country = Repo.insert!(%Country{name: "Something", iso3166_a2: "SMT"})
     user = Repo.insert!(%User{firstname: "John", lastname: "Doe", username: "johndoe", email: "john@doe.com", password: "password123", country_id: country.id, api_id: UUID.uuid4(:hex), api_key: UUID.uuid4(:hex)})
     _admin_user = Repo.insert!(%User{firstname: "Admin", lastname: "Admin", username: "admin", email: "admin@evercam.io", password: "password123", country_id: country.id, api_id: UUID.uuid4(:hex), api_key: UUID.uuid4(:hex)})
