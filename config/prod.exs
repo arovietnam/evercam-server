@@ -35,6 +35,9 @@ config :phoenix, :filter_parameters, ["password", "api_key"]
 
 config :evercam_media, :create_intercom_user, true
 
+# Start spawn process or not
+config :evercam_media, :run_spawn, true
+
 # ## Using releases
 #
 # If you are doing OTP releases, you need to instruct Phoenix

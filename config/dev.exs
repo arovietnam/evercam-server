@@ -18,6 +18,9 @@ config :logger, :console, format: "[$level] $message\n"
 # Do not create intercom user in development mode
 config :evercam_media, :create_intercom_user, false
 
+# Start spawn process or not
+config :evercam_media, :run_spawn, true
+
 # Set a higher stacktrace during development.
 # Do not configure such in production as keeping
 # and calculating stacktraces is usually expensive.

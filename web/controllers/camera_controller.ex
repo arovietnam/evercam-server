@@ -88,7 +88,7 @@ defmodule EvercamMedia.CameraController do
       camera = change_camera_owner(user, camera)
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
-      update_camera_worker(camera.exid)
+      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
 
       conn
       |> render("show.json", %{camera: camera, user: current_user})
@@ -108,7 +108,7 @@ defmodule EvercamMedia.CameraController do
           Camera.invalidate_camera(camera)
           camera = Camera.get_full(camera.exid)
           CameraActivity.log_activity(caller, camera, "edited", %{ip: user_request_ip(conn), agent: get_user_agent(conn)})
-          spawn(fn -> update_camera_worker(camera.exid) end)
+          update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
           conn
           |> render("show.json", %{camera: camera, user: caller})
         {:error, changeset} ->
@@ -159,7 +159,7 @@ defmodule EvercamMedia.CameraController do
             |> Repo.preload([vendor_model: :vendor], force: true)
           CameraActivity.log_activity(caller, camera, "created", %{ip: user_request_ip(conn), agent: get_user_agent(conn)})
           Camera.invalidate_user(caller)
-          send_email_notification(caller, full_camera)
+          send_email_notification(Application.get_env(:evercam_media, :run_spawn), caller, full_camera)
           conn
           |> put_status(:created)
           |> render("show.json", %{camera: full_camera, user: caller})
@@ -224,15 +224,18 @@ defmodule EvercamMedia.CameraController do
     end
   end
 
-  defp update_camera_worker(exid) do
-    exid |> Camera.get_full |> Camera.invalidate_camera
-    camera = exid |> Camera.get_full
+  defp update_camera_worker(true, exid) do
+    spawn fn ->
+      exid |> Camera.get_full |> Camera.invalidate_camera
+      camera = exid |> Camera.get_full
 
-    exid
-    |> String.to_atom
-    |> Process.whereis
-    |> WorkerSupervisor.update_worker(camera)
+      exid
+      |> String.to_atom
+      |> Process.whereis
+      |> WorkerSupervisor.update_worker(camera)
+    end
   end
+  defp update_camera_worker(_mode, _exid), do: :noop
 
   defp change_camera_owner(user, camera) do
     camera
@@ -385,7 +388,7 @@ defmodule EvercamMedia.CameraController do
     end
   end
 
-  defp send_email_notification(user, camera) do
+  defp send_email_notification(true, user, camera) do
     try do
       spawn fn ->
         mac_address = insert_mac_address(camera)
@@ -396,6 +399,7 @@ defmodule EvercamMedia.CameraController do
       Util.error_handler(error)
     end
   end
+  defp send_email_notification(_mode, _user, _camera), do: :noop
 
   defp insert_mac_address(camera) do
     with {:ok, response} <- EvercamMedia.ONVIFClient.request(Camera.get_camera_info(camera.exid), "device_service", "GetNetworkInterfaces") do

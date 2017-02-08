@@ -13,6 +13,9 @@ config :evercam_media, EvercamMedia.Endpoint,
 # Do not create intercom user in test mode
 config :evercam_media, :create_intercom_user, false
 
+# Start spawn process or not
+config :evercam_media, :run_spawn, false
+
 # Print only warnings and errors during test
 config :logger, level: :warn
 
